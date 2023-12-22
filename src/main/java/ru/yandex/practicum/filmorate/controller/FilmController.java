@@ -32,7 +32,7 @@ public class FilmController {
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film, BindingResult result) {
         if (result.hasErrors()) {
-            for (FieldError error: result.getFieldErrors()) {
+            for (FieldError error : result.getFieldErrors()) {
                 log.warn(error.getDefaultMessage());
             }
             throw new ValidationException("Произошла ошибка валидации");
@@ -47,7 +47,7 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film, BindingResult result) {
         if (result.hasErrors()) {
-            for (FieldError error: result.getFieldErrors()) {
+            for (FieldError error : result.getFieldErrors()) {
                 log.warn(error.getDefaultMessage());
             }
             throw new ValidationException("Произошла ошибка валидации");

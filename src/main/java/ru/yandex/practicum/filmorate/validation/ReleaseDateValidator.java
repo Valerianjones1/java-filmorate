@@ -7,7 +7,7 @@ import java.time.LocalDate;
 public class ReleaseDateValidator implements ConstraintValidator<ReleaseDate, LocalDate> {
 
     private String message;
-    private LocalDate inValidDate = LocalDate.of(1895,12,28);
+    private LocalDate inValidDate = LocalDate.of(1895, 12, 28);
 
     @Override
     public void initialize(final ReleaseDate constraintAnnotation) {

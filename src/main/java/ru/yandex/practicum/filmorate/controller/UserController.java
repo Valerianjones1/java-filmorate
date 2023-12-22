@@ -34,7 +34,7 @@ public class UserController {
     @PostMapping
     public User addUser(@Valid @RequestBody User user, BindingResult result) {
         if (result.hasErrors()) {
-            for (FieldError error: result.getFieldErrors()) {
+            for (FieldError error : result.getFieldErrors()) {
                 log.warn(error.getDefaultMessage());
             }
             throw new ValidationException("Произошла ошибка валидации");
@@ -47,13 +47,14 @@ public class UserController {
         log.debug("Добавил пользователя {}", user);
         return user;
     }
+
     @PutMapping
     public User updateUser(@Valid @RequestBody User user, BindingResult result) {
         if (!users.containsKey(user.getId())) {
             throw new NotFoundException("Пользователь для обновления не найден");
         }
         if (result.hasErrors()) {
-            for (FieldError error: result.getFieldErrors()) {
+            for (FieldError error : result.getFieldErrors()) {
                 log.warn(error.getDefaultMessage());
             }
             throw new ValidationException("Произошла ошибка валидации");

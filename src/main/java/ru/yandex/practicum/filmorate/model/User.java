@@ -21,7 +21,7 @@ public class User {
 
     @NotNull(message = "Логин не может быть равен null")
     @NotBlank(message = "Логин не может быть пустым")
-    @Pattern(regexp = "^\\S+$", message ="Пробелы запрещены в логине")
+    @Pattern(regexp = "^\\S+$", message = "Пробелы запрещены в логине")
     private String login;
 
     private String name;
