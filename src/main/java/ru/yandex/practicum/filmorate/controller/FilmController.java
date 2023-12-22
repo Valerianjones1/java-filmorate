@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -31,7 +32,9 @@ public class FilmController {
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film, BindingResult result) {
         if (result.hasErrors()) {
-            log.warn("Произошла ошибка валидации");
+            for (FieldError error: result.getFieldErrors()) {
+                log.warn(error.getDefaultMessage());
+            }
             throw new ValidationException("Произошла ошибка валидации");
         }
         film.setId(getIdCounter());
@@ -44,7 +47,9 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film, BindingResult result) {
         if (result.hasErrors()) {
-            log.warn("Произошла ошибка валидации");
+            for (FieldError error: result.getFieldErrors()) {
+                log.warn(error.getDefaultMessage());
+            }
             throw new ValidationException("Произошла ошибка валидации");
         }
         if (!films.keySet().contains(film.getId())) {

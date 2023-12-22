@@ -6,9 +6,6 @@ import ru.yandex.practicum.filmorate.validation.ReleaseDate;
 import javax.validation.constraints.*;
 import java.time.LocalDate;
 
-/**
- * Film.
- */
 @Data
 public class Film {
     @PositiveOrZero(message = "Идентификатор не может быть меньше нуля")
@@ -26,6 +23,6 @@ public class Film {
     @ReleaseDate
     private LocalDate releaseDate;
 
-    @Positive(message = "Продолжительность не может быть меньше нуля")
+    @Positive(message = "Продолжительность не может быть меньше или равна нулю")
     private int duration; // Продолжительность фильма в минутах
 }

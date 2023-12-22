@@ -34,12 +34,9 @@ public class UserController {
     @PostMapping
     public User addUser(@Valid @RequestBody User user, BindingResult result) {
         if (result.hasErrors()) {
-            System.out.println("HERE HAVE");
-            System.out.println(result.getFieldErrors().isEmpty());
             for (FieldError error: result.getFieldErrors()) {
-                System.out.println("Ошибка: " + error.getDefaultMessage());
+                log.warn(error.getDefaultMessage());
             }
-            log.warn("Произошла ошибка валидации");
             throw new ValidationException("Произошла ошибка валидации");
         }
         if (user.getName() == null) {
@@ -56,7 +53,9 @@ public class UserController {
             throw new NotFoundException("Пользователь для обновления не найден");
         }
         if (result.hasErrors()) {
-            log.warn("Произошла ошибка валидации");
+            for (FieldError error: result.getFieldErrors()) {
+                log.warn(error.getDefaultMessage());
+            }
             throw new ValidationException("Произошла ошибка валидации");
         }
         users.put(user.getId(), user);
