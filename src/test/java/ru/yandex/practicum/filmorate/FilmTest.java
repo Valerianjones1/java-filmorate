@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FilmValidationTest {
+public class FilmTest {
     private Validator validator;
     private Film film;
 
@@ -36,17 +36,6 @@ public class FilmValidationTest {
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
 
         assertTrue(violations.isEmpty());
-    }
-
-    @Test
-    public void shouldNotCreateFilmNegativeId() {
-        film.setId(-1);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
-
-
-        assertFalse(violations.isEmpty());
-        assertEquals("Идентификатор не может быть меньше нуля", message);
     }
 
     @Test

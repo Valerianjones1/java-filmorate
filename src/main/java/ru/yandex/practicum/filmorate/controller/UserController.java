@@ -21,7 +21,7 @@ public class UserController {
     private final Map<Integer, User> users = new HashMap<>();
     private int idCounter = 1;
 
-    public Integer getIdCounter() {
+    private Integer getIdCounter() {
         return idCounter++;
     }
 
@@ -50,14 +50,15 @@ public class UserController {
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user, BindingResult result) {
-        if (!users.containsKey(user.getId())) {
-            throw new NotFoundException("Пользователь для обновления не найден");
-        }
         if (result.hasErrors()) {
             for (FieldError error : result.getFieldErrors()) {
                 log.warn(error.getDefaultMessage());
             }
             throw new ValidationException("Произошла ошибка валидации");
+        }
+        if (user != null && !users.containsKey(user.getId())) {
+            log.warn("Пользователь для обновления не найден");
+            throw new NotFoundException("Пользователь для обновления не найден");
         }
         users.put(user.getId(), user);
         log.debug("Обновил пользователя {}", user);

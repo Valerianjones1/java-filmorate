@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UserValidationTest {
+public class UserTest {
     private Validator validator;
     private User user;
 
@@ -35,17 +35,6 @@ public class UserValidationTest {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
 
         assertTrue(violations.isEmpty());
-    }
-
-    @Test
-    public void shouldNotCreateUserNegativeId() {
-        user.setId(-1);
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
-
-
-        assertFalse(violations.isEmpty());
-        assertEquals("Идентификатор не может быть меньше нуля", message);
     }
 
     @Test

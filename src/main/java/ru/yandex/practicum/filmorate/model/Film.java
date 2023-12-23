@@ -8,8 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class Film {
-    @PositiveOrZero(message = "Идентификатор не может быть меньше нуля")
-    private int id;
+    private Integer id;
 
     @NotNull(message = "Название не может быть null")
     @NotBlank(message = "Название не может быть пустым")

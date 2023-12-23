@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -20,7 +21,7 @@ public class FilmController {
     private final Map<Integer, Film> films = new HashMap<>();
     private int idCounter = 1;
 
-    public Integer getIdCounter() {
+    private Integer getIdCounter() {
         return idCounter++;
     }
 
@@ -52,9 +53,9 @@ public class FilmController {
             }
             throw new ValidationException("Произошла ошибка валидации");
         }
-        if (!films.keySet().contains(film.getId())) {
+        if (film != null && !films.keySet().contains(film.getId())) {
             log.warn("Такого фильма нет в библиотеке");
-            throw new ValidationException("Такого фильма нет в библиотеке.");
+            throw new NotFoundException("Такого фильма нет в библиотеке.");
         }
         films.put(film.getId(), film);
         log.debug("Обновили фильм {}", film);
