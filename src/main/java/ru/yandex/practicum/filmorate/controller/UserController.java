@@ -56,12 +56,17 @@ public class UserController {
             }
             throw new ValidationException("Произошла ошибка валидации");
         }
-        if (user != null && !users.containsKey(user.getId())) {
-            log.warn("Пользователь для обновления не найден");
-            throw new NotFoundException("Пользователь для обновления не найден");
+        if (user.getId() != null) {
+            if (!users.containsKey(user.getId())) {
+                log.warn("Пользователь для обновления не найден");
+                throw new NotFoundException("Пользователь для обновления не найден");
+            }
+            users.put(user.getId(), user);
+            log.debug("Обновил пользователя {}", user);
+        } else {
+            log.warn("Идентификатор пользователя равен null");
+            throw new ValidationException("Идентификатор пользователя равен null");
         }
-        users.put(user.getId(), user);
-        log.debug("Обновил пользователя {}", user);
         return user;
     }
 

@@ -53,12 +53,18 @@ public class FilmController {
             }
             throw new ValidationException("Произошла ошибка валидации");
         }
-        if (film != null && !films.keySet().contains(film.getId())) {
-            log.warn("Такого фильма нет в библиотеке");
-            throw new NotFoundException("Такого фильма нет в библиотеке.");
+
+        if (film.getId() != null) {
+            if (!films.containsKey(film.getId())) {
+                log.warn("Такого фильма нет в библиотеке");
+                throw new NotFoundException("Такого фильма нет в библиотеке.");
+            }
+            films.put(film.getId(), film);
+            log.debug("Обновили фильм {}", film);
+        } else {
+            log.warn("Идентификатор фильма равен null");
+            throw new ValidationException("Идентификатор фильма равен null");
         }
-        films.put(film.getId(), film);
-        log.debug("Обновили фильм {}", film);
 
         return film;
     }
