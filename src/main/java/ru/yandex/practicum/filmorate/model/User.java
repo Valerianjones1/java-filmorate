@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 public class User {
@@ -23,4 +24,10 @@ public class User {
 
     @PastOrPresent(message = "День рождения не может быть в будущем")
     private LocalDate birthday;
+
+    private Set<Integer> friends;
+
+    public Integer getFriendsSize() {
+        return friends.size();
+    }
 }
