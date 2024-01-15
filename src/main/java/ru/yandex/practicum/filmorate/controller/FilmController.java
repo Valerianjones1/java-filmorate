@@ -1,12 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.IncorrectParamException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -14,7 +10,6 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@Slf4j
 @RequestMapping("/films")
 public class FilmController {
     private final FilmService service;
@@ -26,43 +21,28 @@ public class FilmController {
 
     @GetMapping
     public List<Film> findAllFilms() {
-        return service.getStorage().findAll();
+        return service.findAll();
     }
 
     @PostMapping
-    public Film addFilm(@Valid @RequestBody Film film, BindingResult result) {
-        if (result.hasErrors()) {
-            for (FieldError error : result.getFieldErrors()) {
-                log.warn(error.getDefaultMessage());
-            }
-            throw new ValidationException("Произошла ошибка валидации");
-        }
-        Film addedFilm = service.getStorage().add(film);
-        log.debug("Добавили фильм {}", addedFilm);
+    public Film addFilm(@Valid @RequestBody Film film) {
+        Film addedFilm = service.add(film);
         return addedFilm;
     }
 
     @PutMapping
-    public Film updateFilm(@Valid @RequestBody Film film, BindingResult result) {
-        if (result.hasErrors()) {
-            for (FieldError error : result.getFieldErrors()) {
-                log.warn(error.getDefaultMessage());
-            }
-            throw new ValidationException("Произошла ошибка валидации");
-        }
-
-        Film updatedFilm = service.getStorage().update(film);
-        return updatedFilm;
+    public Film updateFilm(@Valid @RequestBody Film film) {
+        return service.update(film);
     }
 
     @DeleteMapping("/{filmId}")
     public void removeFilm(@PathVariable Integer filmId) {
-        service.getStorage().remove(filmId);
+        service.remove(filmId);
     }
 
     @GetMapping("/{filmId}")
     public Film getFilm(@PathVariable Integer filmId) {
-        return service.getStorage().get(filmId);
+        return service.get(filmId);
     }
 
     @PutMapping("/{filmId}/like/{userId}")

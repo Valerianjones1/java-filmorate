@@ -2,10 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -26,45 +23,33 @@ public class UserController {
 
     @GetMapping
     public List<User> findAllUsers() {
-        return service.getStorage().findAll();
+        return service.findAll();
     }
 
     @PostMapping
-    public User addUser(@Valid @RequestBody User user, BindingResult result) {
-        if (result.hasErrors()) {
-            for (FieldError error : result.getFieldErrors()) {
-                log.warn(error.getDefaultMessage());
-            }
-            throw new ValidationException("Произошла ошибка валидации");
-        }
+    public User addUser(@Valid @RequestBody User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        User addedUser = service.getStorage().add(user);
+        User addedUser = service.add(user);
         log.debug("Добавил пользователя {}", user);
         return addedUser;
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User user, BindingResult result) {
-        if (result.hasErrors()) {
-            for (FieldError error : result.getFieldErrors()) {
-                log.warn(error.getDefaultMessage());
-            }
-            throw new ValidationException("Произошла ошибка валидации");
-        }
-        User updatedUser = service.getStorage().update(user);
+    public User updateUser(@Valid @RequestBody User user) {
+        User updatedUser = service.update(user);
         return updatedUser;
     }
 
     @DeleteMapping("/{userId}")
     public void removeUser(@PathVariable Integer userId) {
-        service.getStorage().remove(userId);
+        service.remove(userId);
     }
 
     @GetMapping("/{userId}")
     public User getUser(@PathVariable Integer userId) {
-        return service.getStorage().get(userId);
+        return service.get(userId);
     }
 
     @PutMapping("/{userId}/friends/{friendId}")

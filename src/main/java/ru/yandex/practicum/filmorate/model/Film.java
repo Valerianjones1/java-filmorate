@@ -8,7 +8,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.Set;
 
 @Data
 public class Film {
@@ -28,10 +27,4 @@ public class Film {
 
     @Positive(message = "Продолжительность не может быть меньше или равна нулю")
     private int duration; // Продолжительность фильма в минутах
-
-    private Set<Integer> usersLikes; // Пользователи, которые поставили лайки на фильм
-
-    public Integer getLikesSize() {
-        return usersLikes.size();
-    }
 }
