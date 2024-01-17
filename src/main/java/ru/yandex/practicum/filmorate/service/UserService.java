@@ -21,11 +21,13 @@ public class UserService {
     }
 
     public User add(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return storage.add(user);
     }
 
     public User update(User user) {
-        System.out.println(user);
         if (user.getId() == null) {
             log.warn("Идентификатор пользователя равен null");
             throw new ValidationException("Идентификатор пользователя равен null");
@@ -42,9 +44,6 @@ public class UserService {
     }
 
     public void remove(Integer userId) {
-        if (storage.get(userId) == null) {
-            throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
-        }
         storage.remove(userId);
     }
 
@@ -53,24 +52,22 @@ public class UserService {
     }
 
     public User get(Integer userId) {
-        if (storage.get(userId) == null) {
+        User foundUser = storage.get(userId);
+        if (foundUser == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
-        return storage.get(userId);
+        return foundUser;
     }
 
     public User addFriend(Integer userId, Integer friendId) {
         User user = storage.get(userId);
         User friend = storage.get(friendId);
 
-        if (user == null && friend == null) {
-            throw new NotFoundException(String.format("Пользователи с идентификатором %s,%s не найдены", userId, friendId));
-        } else if (user == null) {
+        if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         } else if (friend == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", friendId));
         }
-
 
         return storage.addFriend(user, friend);
     }
@@ -79,9 +76,7 @@ public class UserService {
         User user = storage.get(userId);
         User friend = storage.get(friendId);
 
-        if (user == null && friend == null) {
-            throw new NotFoundException(String.format("Пользователи с идентификатором %s,%s не найдены", userId, friendId));
-        } else if (user == null) {
+        if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         } else if (friend == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", friendId));
@@ -101,9 +96,7 @@ public class UserService {
     public List<User> getCommonFriends(Integer userId, Integer otherUserId) {
         User user = storage.get(userId);
         User otherUser = storage.get(otherUserId);
-        if (user == null && otherUser == null) {
-            throw new NotFoundException(String.format("Пользователи с идентификатором %s,%s не найдены", userId, otherUserId));
-        } else if (user == null) {
+        if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         } else if (otherUser == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", otherUserId));

@@ -29,9 +29,6 @@ public class FilmService {
     }
 
     public void remove(Integer filmId) {
-        if (filmStorage.get(filmId) == null) {
-            throw new NotFoundException(String.format("Фильм с идентификатором %s не найден", filmId));
-        }
         filmStorage.remove(filmId);
     }
 
@@ -66,9 +63,7 @@ public class FilmService {
         User foundUser = userStorage.get(userId);
         Film likedFilm;
 
-        if (foundFilm == null && foundUser == null) {
-            throw new NotFoundException(String.format("Пользователь c id %s и фильм с id %s не найдены", userId, filmId));
-        } else if (foundFilm == null) {
+        if (foundFilm == null) {
             throw new NotFoundException(String.format("Фильм c идентификатором %s не найден", filmId));
         } else if (foundUser == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
@@ -81,9 +76,7 @@ public class FilmService {
         Film foundFilm = filmStorage.get(filmId);
         User foundUser = userStorage.get(userId);
 
-        if (foundFilm == null && foundUser == null) {
-            throw new NotFoundException(String.format("Пользователь с id %s и фильм c id %s не найдены", userId, filmId));
-        } else if (foundFilm == null) {
+        if (foundFilm == null) {
             throw new NotFoundException(String.format("Фильм c идентификатором %s не найден", filmId));
         } else if (foundUser == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));

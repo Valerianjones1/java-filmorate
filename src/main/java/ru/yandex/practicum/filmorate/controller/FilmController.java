@@ -2,11 +2,11 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.IncorrectParamException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 @RestController
@@ -56,10 +56,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
-        if (count < 0) {
-            throw new IncorrectParamException("Параметр count не может быть меньше нуля.");
-        }
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count) {
         return service.getPopularFilms(count);
     }
 
