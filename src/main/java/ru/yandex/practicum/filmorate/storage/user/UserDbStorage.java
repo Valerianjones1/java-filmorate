@@ -127,9 +127,9 @@ public class UserDbStorage implements UserStorage {
         if (!friends.isEmpty()) {
             Map<Integer, String> friendsHash = new HashMap<>();
             for (Map<String, Object> row : friends) {
-                Integer other_user_id = (Integer) row.get("other_user_id");
+                Integer otherUserId = (Integer) row.get("other_user_id");
                 String status = (String) row.get("status");
-                friendsHash.put(other_user_id, status);
+                friendsHash.put(otherUserId, status);
             }
             initialUser.setFriends(friendsHash);
         }
