@@ -15,15 +15,15 @@ public class FilmGenreDbStorage implements FilmGenreStorage {
 
 
     @Override
-    public void add(Integer film_id, Integer genre_id) {
+    public void add(Integer filmId, Integer genreId) {
         String sqlQuery = "INSERT INTO FILM_GENRE(film_id, genre_id) VALUES(?, ?)";
-        jdbcTemplate.update(sqlQuery, film_id, genre_id);
+        jdbcTemplate.update(sqlQuery, filmId, genreId);
     }
 
     @Override
-    public void delete(Integer film_id, Integer genre_id) {
+    public void delete(Integer filmId, Integer genreId) {
         String sqlQuery = "DELETE FROM film_genre WHERE film_id=? and genre_id=?";
-        jdbcTemplate.update(sqlQuery, film_id, genre_id);
+        jdbcTemplate.update(sqlQuery, filmId, genreId);
 
     }
 }
