@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -19,7 +20,8 @@ public class FilmService {
     private final UserStorage userStorage;
 
     @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+    public FilmService(@Qualifier("FilmDbStorage") FilmStorage filmStorage,
+                       @Qualifier("UserDbStorage") UserStorage userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
     }
@@ -38,9 +40,10 @@ public class FilmService {
             throw new ValidationException("Идентификатор фильма равен null");
         }
         if (filmStorage.get(film.getId()) == null) {
-            log.warn("Такого фильма нет в библиотеке");
+            log.warn(String.format("Фильм с идентификатором %s не найден", film));
             throw new NotFoundException(String.format("Фильм с идентификатором %s не найден", film.getId()));
         }
+
         filmStorage.update(film);
         log.debug("Обновили фильм {}", film);
         return film;
