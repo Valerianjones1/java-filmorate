@@ -22,7 +22,7 @@ public class FilmGenreDbStorage implements FilmGenreStorage {
 
     @Override
     public void delete(Integer filmId, Integer genreId) {
-        String sqlQuery = "DELETE FROM film_genre WHERE film_id=? and genre_id=?";
+        String sqlQuery = "DELETE FROM film_genre WHERE film_id = ? and genre_id = ?";
         jdbcTemplate.update(sqlQuery, filmId, genreId);
 
     }
