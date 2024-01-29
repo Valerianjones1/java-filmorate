@@ -22,11 +22,11 @@ public class GenreService {
     }
 
     public Genre getGenre(Integer genreId) {
-        Genre foundGenre = genreStorage.get(genreId);
-        if (foundGenre == null) {
+        Genre genre = genreStorage.get(genreId);
+        if (genre == null) {
             throw new NotFoundException(String.format("Жанр %s не был найден", genreId));
         }
-        return foundGenre;
+        return genre;
     }
 
 }

@@ -9,8 +9,8 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,7 +41,7 @@ public class UserTest {
     public void shouldNotCreateUserSpacesLogin() {
         user.setLogin("test test");
         Set<ConstraintViolation<User>> violations = validator.validate(user);
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
+        String message = new ArrayList<>(violations).get(0).getMessage();
 
 
         assertFalse(violations.isEmpty());
@@ -69,7 +69,7 @@ public class UserTest {
         user.setBirthday(LocalDate.now().plusDays(1));
         Set<ConstraintViolation<User>> violations = validator.validate(user);
 
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
+        String message = new ArrayList<>(violations).get(0).getMessage();
 
         assertFalse(violations.isEmpty());
         assertEquals("День рождения не может быть в будущем", message);

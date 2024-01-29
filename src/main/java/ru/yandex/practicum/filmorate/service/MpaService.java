@@ -22,10 +22,10 @@ public class MpaService {
     }
 
     public Mpa getMpaById(Integer mpaId) {
-        Mpa foundMpa = mpaStorage.get(mpaId);
-        if (foundMpa == null) {
+        Mpa mpa = mpaStorage.get(mpaId);
+        if (mpa == null) {
             throw new NotFoundException(String.format("Рейтинг %s не был найден", mpaId));
         }
-        return mpaStorage.get(mpaId);
+        return mpa;
     }
 }

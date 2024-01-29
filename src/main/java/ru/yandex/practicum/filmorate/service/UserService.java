@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -18,7 +17,7 @@ public class UserService {
     private final UserStorage storage;
 
     @Autowired
-    public UserService(@Qualifier("UserDbStorage") UserStorage storage) {
+    public UserService(UserStorage storage) {
         this.storage = storage;
     }
 
@@ -54,11 +53,11 @@ public class UserService {
     }
 
     public User get(Integer userId) {
-        User foundUser = storage.get(userId);
-        if (foundUser == null) {
+        User user = storage.get(userId);
+        if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
-        return foundUser;
+        return user;
     }
 
     public User addFriend(Integer userId, Integer friendId) {

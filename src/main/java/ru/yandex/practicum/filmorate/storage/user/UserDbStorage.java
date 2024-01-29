@@ -2,32 +2,44 @@ package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component("UserDbStorage")
 public class UserDbStorage implements UserStorage {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Autowired
-    public UserDbStorage(JdbcTemplate jdbcTemplate) {
+    public UserDbStorage(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public User add(User user) {
-        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("users")
-                .usingGeneratedKeyColumns("ID");
-        Integer userId = simpleJdbcInsert.executeAndReturnKey(user.toMap()).intValue();
+        String sqlQuery = "INSERT INTO users(email, login, name, birthday) " +
+                "VALUES (:email, :login, :name, :birthday)";
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        SqlParameterSource userParams = new MapSqlParameterSource(userToMap(user.getEmail(), user.getLogin(),
+                user.getName(), user.getBirthday()));
+
+        jdbcTemplate.update(sqlQuery, userParams, keyHolder);
+
+        Integer userId = Objects.requireNonNull(keyHolder.getKey()).intValue();
 
         user.setId(userId);
         return user;
@@ -36,16 +48,17 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User update(User user) {
         String sqlQuery = "UPDATE users SET " +
-                "email = ?, login = ?, name = ?, birthday = ? " +
-                "WHERE id = ?";
+                "email = :email, login = :login, name = :name, birthday = :birthday " +
+                "WHERE id = :id";
 
+        SqlParameterSource userParams = new MapSqlParameterSource(Map.of(
+                "email", user.getEmail(),
+                "login", user.getLogin(),
+                "name", user.getName(),
+                "birthday", user.getBirthday(),
+                "id", user.getId()));
         try {
-            jdbcTemplate.update(sqlQuery,
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getName(),
-                    user.getBirthday(),
-                    user.getId());
+            jdbcTemplate.update(sqlQuery, userParams);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -55,9 +68,11 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void remove(Integer userId) {
-        String sqlQuery = "DELETE FROM users WHERE id = ?";
+        String sqlQuery = "DELETE FROM users WHERE id = :id";
 
-        jdbcTemplate.update(sqlQuery, userId);
+        SqlParameterSource params = new MapSqlParameterSource("id", userId);
+
+        jdbcTemplate.update(sqlQuery, params);
     }
 
     @Override
@@ -69,9 +84,10 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User get(Integer userId) {
 
-        String sqlQuery = "SELECT * FROM users WHERE id = ?";
+        String sqlQuery = "SELECT * FROM users WHERE id = :id";
+        SqlParameterSource params = new MapSqlParameterSource("id", userId);
         try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeUser, userId);
+            return jdbcTemplate.queryForObject(sqlQuery, params, this::makeUser);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -81,24 +97,33 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User addFriend(User user, User friend) {
         String sqlQuery = "INSERT INTO user_relation (user_id, other_user_id) " +
-                "VALUES (?, ?)";
+                "VALUES (:user_id, :other_user_id)";
 
-        jdbcTemplate.update(sqlQuery, user.getId(), friend.getId());
+        SqlParameterSource params = new MapSqlParameterSource(Map.of(
+                "user_id", user.getId(),
+                "other_user_id", friend.getId()));
+
+        jdbcTemplate.update(sqlQuery, params);
         return user;
     }
 
     @Override
     public User removeFriend(User user, User friend) {
-        String sqlQuery = "DELETE FROM user_relation WHERE (user_id = ? AND other_user_id = ?) OR (user_id = ? AND other_user_id = ?)";
-        jdbcTemplate.update(sqlQuery, user.getId(), friend.getId(), friend.getId(), user.getId());
+        String sqlQuery = "DELETE FROM user_relation WHERE (user_id = :user_id AND other_user_id = :other_user_id) " +
+                "OR (user_id = :other_user_id AND other_user_id = :user_id)";
+        SqlParameterSource params = new MapSqlParameterSource(Map.of(
+                "user_id", user.getId(),
+                "other_user_id", friend.getId()));
+        jdbcTemplate.update(sqlQuery, params);
         return user;
     }
 
     @Override
     public List<User> getFriends(Integer userId) {
         String sqlQuery = "SELECT * FROM users as u " +
-                "WHERE u.id IN (SELECT other_user_id FROM user_relation as ur WHERE ur.user_id = ?)";
-        return jdbcTemplate.query(sqlQuery, this::makeUser, userId);
+                "WHERE u.id IN (SELECT other_user_id FROM user_relation as ur WHERE ur.user_id = :user_id)";
+        SqlParameterSource params = new MapSqlParameterSource("user_id", userId);
+        return jdbcTemplate.query(sqlQuery, params, this::makeUser);
     }
 
     @Override
@@ -107,10 +132,14 @@ public class UserDbStorage implements UserStorage {
                 "FROM users as u " +
                 "WHERE u.id in " +
                 "(SELECT other_user_id FROM user_relation as ur " +
-                "WHERE ur.user_id=? and other_user_id in " +
-                "(SELECT other_user_id FROM user_relation as ur1 WHERE ur1.user_id = ?))";
+                "WHERE ur.user_id=:user_id and other_user_id in " +
+                "(SELECT other_user_id FROM user_relation as ur1 WHERE ur1.user_id = :other_user_id))";
 
-        return jdbcTemplate.query(sqlQuery, this::makeUser, userId, otherUserId);
+        SqlParameterSource params = new MapSqlParameterSource(Map.of(
+                "user_id", userId,
+                "other_user_id", otherUserId));
+
+        return jdbcTemplate.query(sqlQuery, params, this::makeUser);
     }
 
     private User makeUser(ResultSet resultSet, int rowNum) throws SQLException {
@@ -120,9 +149,10 @@ public class UserDbStorage implements UserStorage {
                 resultSet.getString("name"),
                 resultSet.getDate("birthday").toLocalDate());
 
+        SqlParameterSource params = new MapSqlParameterSource(Map.of(
+                "user_id", initialUser.getId()));
         List<Map<String, Object>> friends = jdbcTemplate.queryForList(
-                "SELECT * FROM user_relation WHERE user_id = ?",
-                initialUser.getId());
+                "SELECT * FROM user_relation WHERE user_id = :user_id", params);
 
         if (!friends.isEmpty()) {
             Map<Integer, String> friendsHash = new HashMap<>();
@@ -135,5 +165,15 @@ public class UserDbStorage implements UserStorage {
         }
 
         return initialUser;
+    }
+
+    public Map<String, Object> userToMap(String email, String login,
+                                         String name, LocalDate birthday) {
+        Map<String, Object> values = new HashMap<>();
+        values.put("email", email);
+        values.put("login", login);
+        values.put("name", name);
+        values.put("birthday", birthday);
+        return values;
     }
 }

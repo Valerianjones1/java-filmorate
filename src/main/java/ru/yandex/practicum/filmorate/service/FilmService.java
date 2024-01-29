@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -20,8 +19,7 @@ public class FilmService {
     private final UserStorage userStorage;
 
     @Autowired
-    public FilmService(@Qualifier("FilmDbStorage") FilmStorage filmStorage,
-                       @Qualifier("UserDbStorage") UserStorage userStorage) {
+    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
     }
@@ -54,38 +52,38 @@ public class FilmService {
     }
 
     public Film get(Integer filmId) {
-        Film foundFilm = filmStorage.get(filmId);
-        if (foundFilm == null) {
+        Film film = filmStorage.get(filmId);
+        if (film == null) {
             throw new NotFoundException(String.format("Фильм c идентификатором %s не найден", filmId));
         }
-        return foundFilm;
+        return film;
     }
 
     public Film like(Integer filmId, Integer userId) {
-        Film foundFilm = filmStorage.get(filmId);
-        User foundUser = userStorage.get(userId);
+        Film film = filmStorage.get(filmId);
+        User user = userStorage.get(userId);
         Film likedFilm;
 
-        if (foundFilm == null) {
+        if (film == null) {
             throw new NotFoundException(String.format("Фильм c идентификатором %s не найден", filmId));
-        } else if (foundUser == null) {
+        } else if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
-        likedFilm = filmStorage.like(foundFilm, foundUser);
+        likedFilm = filmStorage.like(film, user);
         return likedFilm;
     }
 
     public void removeLike(Integer filmId, Integer userId) {
-        Film foundFilm = filmStorage.get(filmId);
-        User foundUser = userStorage.get(userId);
+        Film film = filmStorage.get(filmId);
+        User user = userStorage.get(userId);
 
-        if (foundFilm == null) {
+        if (film == null) {
             throw new NotFoundException(String.format("Фильм c идентификатором %s не найден", filmId));
-        } else if (foundUser == null) {
+        } else if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
 
-        filmStorage.removeLike(foundFilm, foundUser);
+        filmStorage.removeLike(film, user);
     }
 
     public List<Film> getPopularFilms(Integer count) {

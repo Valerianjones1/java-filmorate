@@ -8,10 +8,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.LinkedHashSet;
 
 @Data
 public class Film {
@@ -32,7 +29,7 @@ public class Film {
     @Positive(message = "Продолжительность не может быть меньше или равна нулю")
     private int duration; // Продолжительность фильма в минутах
 
-    private List<Genre> genres = new ArrayList<>();
+    private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
     private Integer rate;
 
 
@@ -73,16 +70,5 @@ public class Film {
     }
 
     public Film() {
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> values = new HashMap<>();
-        values.put("name", name);
-        values.put("description", description);
-        values.put("release_date", releaseDate);
-        values.put("duration", duration);
-        values.put("mpa_id", mpa != null ? mpa.getId() : null);
-        values.put("rate", rate != null ? rate : null);
-        return values;
     }
 }
