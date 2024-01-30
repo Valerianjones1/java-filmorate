@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate.storage.film;
+package ru.yandex.practicum.filmorate.repository.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -13,7 +12,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.filmGenre.FilmGenreStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,14 +19,12 @@ import java.util.*;
 
 @Component("FilmDbStorage")
 @Slf4j
-public class FilmDbStorage implements FilmStorage {
+public class JdbcFilmRepository implements FilmRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final FilmGenreStorage filmGenreStorage;
 
     @Autowired
-    public FilmDbStorage(NamedParameterJdbcTemplate jdbcTemplate, FilmGenreStorage filmGenreStorage) {
+    public JdbcFilmRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.filmGenreStorage = filmGenreStorage;
     }
 
     @Override
@@ -46,16 +42,9 @@ public class FilmDbStorage implements FilmStorage {
 
         film.setId(filmId);
 
-        Set<Genre> filmGenres = film.getGenres();
-        if (filmGenres != null && !filmGenres.isEmpty()) {
-            String sqlQuery2 = "INSERT INTO film_genre(film_id, genre_id) " +
-                    "VALUES (:film_id, :genre_id)";
-
-            for (Genre genre : filmGenres) {
-                SqlParameterSource filmGenreParams = new MapSqlParameterSource(Map.of("film_id", film.getId(),
-                        "genre_id", genre.getId()));
-                jdbcTemplate.update(sqlQuery2, filmGenreParams);
-            }
+        List<Genre> genres = new ArrayList<>(film.getGenres());
+        if (!genres.isEmpty()) {
+            addGenresToFilm(film.getId(), genres);
         }
 
         return film;
@@ -69,21 +58,18 @@ public class FilmDbStorage implements FilmStorage {
                 "WHERE id = :id";
 
         SqlParameterSource filmParams = new MapSqlParameterSource(filmToMap(film));
-
         jdbcTemplate.update(sqlQuery, filmParams);
 
-        LinkedHashSet<Genre> oldGenres = get(film.getId()).getGenres();
-        LinkedHashSet<Genre> newGenres = film.getGenres();
+        // Удаление старых жанров
+        String sqlQuery2 = "DELETE FROM film_genre WHERE film_id = :film_id";
+        SqlParameterSource params = new MapSqlParameterSource("film_id", film.getId());
+        jdbcTemplate.update(sqlQuery2, params);
 
-        for (Genre genre : oldGenres) {
-            filmGenreStorage.delete(film.getId(), genre.getId());
-        }
+        // Добавление новых жанров
+        List<Genre> newGenres = new ArrayList<>(film.getGenres());
+        addGenresToFilm(film.getId(), newGenres);
 
-        for (Genre genre : newGenres) {
-            filmGenreStorage.add(film.getId(), genre.getId());
-        }
-
-        film.setGenres(newGenres);
+        film.setGenres(film.getGenres());
         return film;
     }
 
@@ -96,37 +82,32 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findAll() {
-        String sqlQuery = "SELECT film.id as id, mpa.name as mpa_name,mpa.id as mpa_id, * " +
+        String sqlQuery = "SELECT film.id as id, mpa.name as mpa_name,mpa.id as mpa_id," +
+                "g.name as genre_name, g.id as genre_id, * " +
                 "FROM film  " +
-                "LEFT JOIN mpa ON mpa.id=film.mpa_id ";
+                "LEFT JOIN mpa ON mpa.id=film.mpa_id " +
+                "LEFT JOIN film_genre as fg ON fg.film_id=film.id " +
+                "LEFT JOIN genre as g ON g.id=fg.genre_id";
 
-        List<Film> films = jdbcTemplate.query(sqlQuery, this::makeFilm);
-
-        for (Film film : films) {
-            List<Genre> genres = findGenreOfFilm(film.getId());
-            film.getGenres().addAll(genres);
-        }
-        return films;
+        return findAllFilms(sqlQuery);
     }
 
     @Override
     public List<Film> findAllByPopular(Integer count) {
-        String sqlQuery = "SELECT m.name as mpa_name, * " +
+        String sqlQuery = "SELECT f.id as id, m.name as mpa_name,m.id as mpa_id," +
+                "g.name as genre_name, g.id as genre_id, * " +
                 "FROM film as f " +
                 "LEFT JOIN film_like as fl ON fl.film_id=f.id " +
                 "LEFT JOIN mpa as m ON m.id=f.mpa_id " +
+                "LEFT JOIN film_genre as fg ON fg.film_id=f.id " +
+                "LEFT JOIN genre as g ON g.id=fg.genre_id " +
                 "GROUP BY fl.user_id, f.id " +
                 "ORDER BY COUNT(fl.user_id) DESC " +
                 "LIMIT :limit";
 
         SqlParameterSource params = new MapSqlParameterSource("limit", count);
-        List<Film> popularFilms = jdbcTemplate.query(sqlQuery, params, this::makeFilm);
-        for (Film film : popularFilms) {
-            List<Genre> genres = findGenreOfFilm(film.getId());
-            film.getGenres().addAll(genres);
-        }
 
-        return popularFilms;
+        return findAllPopularFilmFilms(sqlQuery, params);
     }
 
     @Override
@@ -138,12 +119,11 @@ public class FilmDbStorage implements FilmStorage {
                 "LEFT JOIN film_genre as fg ON fg.film_id = film.id " +
                 "LEFT JOIN genre as g ON g.id=fg.genre_id " +
                 "WHERE film.id = :id";
-        try {
-            SqlParameterSource params = new MapSqlParameterSource("id", filmId);
-            return jdbcTemplate.queryForObject(sqlQuery, params, this::makeFilmForGet);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+
+        SqlParameterSource params = new MapSqlParameterSource("id", filmId);
+        List<Film> films = jdbcTemplate.query(sqlQuery, params, this::makeFilm);
+        return films.isEmpty() ? null : films.get(0);
+
     }
 
     @Override
@@ -165,31 +145,8 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sqlQuery, params);
     }
 
-    private List<Genre> findGenreOfFilm(Integer filmId) {
-        String sqlQuery = "SELECT g.name as genre_name, g.id as genre_id FROM film as f " +
-                "JOIN film_genre as fg ON fg.film_id = f.id " +
-                "JOIN genre as g ON g.id=fg.genre_id " +
-                "WHERE f.id = :id";
-        SqlParameterSource params = new MapSqlParameterSource("id", filmId);
-        return jdbcTemplate.query(sqlQuery, params, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("genre_name"));
-            return genre;
-        });
-    }
-
-    public List<Map<Integer, Integer>> getFilmLikes(Integer filmId, Integer userId) {
-        String sqlQuery = "SELECT film_id, user_id FROM film_like WHERE film_id = :film_id and user_id = :user_id";
-        SqlParameterSource params = new MapSqlParameterSource(Map.of("film_id", filmId, "user_id", userId));
-
-        return jdbcTemplate.query(sqlQuery, params, (rs, rowNum) ->
-                Map.of(rs.getInt("film_id"), rs.getInt("user_id")));
-    }
-
-    private Film makeFilmForGet(ResultSet rs, int rowNum) throws SQLException {
-        Film film = makeFilm(rs, rowNum);
-
+    private Film makeFilm(ResultSet rs, int rowNum) throws SQLException {
+        Film film = rsToFilm(rs);
         if (rs.getInt("genre_id") != 0) {
             do {
                 Genre genre = new Genre(rs.getInt("genre_id"), rs.getString("genre_name"));
@@ -199,7 +156,41 @@ public class FilmDbStorage implements FilmStorage {
         return film;
     }
 
-    public Film makeFilm(ResultSet rs, Integer rowNum) throws SQLException {
+    private List<Film> findAllFilms(String sqlQuery) {
+        HashMap<Integer, Film> films = new HashMap<>();
+        jdbcTemplate.query(sqlQuery, (rs, rowNum) -> {
+            int filmId = rs.getInt("id");
+            if (!films.containsKey(filmId)) {
+                Film film = rsToFilm(rs);
+                films.put(filmId, film);
+            }
+            if (rs.getInt("genre_id") != 0) {
+                films.get(filmId).getGenres().add(new Genre(rs.getInt("genre_id"),
+                        rs.getString("genre_name")));
+            }
+            return null;
+        });
+        return new ArrayList<>(films.values());
+    }
+
+    private List<Film> findAllPopularFilmFilms(String sqlQuery, SqlParameterSource params) {
+        HashMap<Integer, Film> films = new HashMap<>();
+        jdbcTemplate.query(sqlQuery, params, (rs, rowNum) -> {
+            int filmId = rs.getInt("id");
+            if (!films.containsKey(filmId)) {
+                Film film = rsToFilm(rs);
+                films.put(filmId, film);
+            }
+            if (rs.getInt("genre_id") != 0) {
+                films.get(filmId).getGenres().add(new Genre(rs.getInt("genre_id"),
+                        rs.getString("genre_name")));
+            }
+            return null;
+        });
+        return new ArrayList<>(films.values());
+    }
+
+    private Film rsToFilm(ResultSet rs) throws SQLException {
         Film film = new Film();
         film.setId(rs.getInt("id"));
         film.setName(rs.getString("name"));
@@ -207,15 +198,16 @@ public class FilmDbStorage implements FilmStorage {
         film.setReleaseDate(rs.getDate("release_date").toLocalDate());
         film.setDuration(rs.getInt("duration"));
 
-        Mpa mpa = new Mpa();
-        mpa.setId(rs.getInt("mpa_id"));
-        mpa.setName(rs.getString("mpa_name"));
-        film.setMpa(mpa);
-
+        if (rs.getInt("mpa_id") != 0) {
+            Mpa mpa = new Mpa();
+            mpa.setId(rs.getInt("mpa_id"));
+            mpa.setName(rs.getString("mpa_name"));
+            film.setMpa(mpa);
+        }
         return film;
     }
 
-    public Map<String, Object> filmToMap(Film film) {
+    private Map<String, Object> filmToMap(Film film) {
         Map<String, Object> values = new HashMap<>();
         values.put("name", film.getName());
         values.put("description", film.getDescription());
@@ -228,5 +220,17 @@ public class FilmDbStorage implements FilmStorage {
             values.put("id", film.getId());
         }
         return values;
+    }
+
+    private void addGenresToFilm(Integer filmId, List<Genre> genres) {
+        Map<String, Object>[] filmGenres = new HashMap[genres.size()];
+        int count = 0;
+        for (Genre genre : genres) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("film_id", filmId);
+            map.put("genre_id", genre.getId());
+            filmGenres[count++] = map;
+        }
+        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRE(film_id, genre_id) VALUES(:film_id, :genre_id)", filmGenres);
     }
 }

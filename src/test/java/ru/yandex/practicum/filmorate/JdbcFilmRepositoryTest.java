@@ -4,15 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
-import ru.yandex.practicum.filmorate.storage.filmGenre.FilmGenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.filmGenre.FilmGenreStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.repository.film.JdbcFilmRepository;
+import ru.yandex.practicum.filmorate.repository.user.JdbcUserRepository;
+import ru.yandex.practicum.filmorate.repository.user.UserRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,15 +22,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest // указываем, о необходимости подготовить бины для работы с БД
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class FilmDbStorageTest {
+class JdbcFilmRepositoryTest {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
     public void testFindFilmById() {
         Film film = new Film("Тест фильм", "Описание",
                 LocalDate.of(2005, 11, 12), 100, new Mpa(1, "G"));
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
 
         Film newFilm = filmStorage.add(film);
 
@@ -49,8 +48,7 @@ class FilmDbStorageTest {
 
     @Test
     public void testFindAll() {
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
         List<Film> emptyFilms = filmStorage.findAll();
 
         Film film = new Film("Тест фильм", "Описание",
@@ -71,8 +69,7 @@ class FilmDbStorageTest {
 
     @Test
     public void testUpdate() {
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
 
         Film film = new Film("Тест фильм", "Описание",
                 LocalDate.of(2005, 11, 12), 100, new Mpa(1, "G"));
@@ -96,8 +93,7 @@ class FilmDbStorageTest {
 
     @Test
     public void testRemove() {
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
 
         Film film = new Film("Тест фильм", "Описание",
                 LocalDate.of(2005, 11, 12), 100, new Mpa(1, "G"));
@@ -118,9 +114,8 @@ class FilmDbStorageTest {
 
     @Test
     public void testFindAllPopular() {
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        UserStorage userStorage = new UserDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        UserRepository userRepository = new JdbcUserRepository(jdbcTemplate);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
 
         Film film1 = new Film("Тест фильм", "Описание",
                 LocalDate.of(2005, 11, 12), 100, new Mpa(1, "G"));
@@ -130,7 +125,7 @@ class FilmDbStorageTest {
 
         Film newFilm = filmStorage.add(film1);
         User newUser = new User("user@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
-        User adddedUser = userStorage.add(newUser);
+        User adddedUser = userRepository.add(newUser);
 
 
         filmStorage.add(film2);
@@ -151,25 +146,32 @@ class FilmDbStorageTest {
 
     @Test
     public void testRemoveLike() {
-        FilmGenreStorage filmGenreStorage = new FilmGenreDbStorage(jdbcTemplate);
-        UserStorage userStorage = new UserDbStorage(jdbcTemplate);
-        FilmDbStorage filmStorage = new FilmDbStorage(jdbcTemplate, filmGenreStorage);
+        UserRepository userRepository = new JdbcUserRepository(jdbcTemplate);
+        JdbcFilmRepository filmStorage = new JdbcFilmRepository(jdbcTemplate);
 
         Film film1 = new Film("Тест фильм", "Описание",
                 LocalDate.of(2005, 11, 12), 100, new Mpa(1, "G"));
 
         Film newFilm = filmStorage.add(film1);
         User newUser = new User("user@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
-        User addedUser = userStorage.add(newUser);
+        User addedUser = userRepository.add(newUser);
 
-        List<Map<Integer, Integer>> emptyLikes = filmStorage.getFilmLikes(newFilm.getId(), addedUser.getId());
+        List<Map<Integer, Integer>> emptyLikes = getFilmLikes(newFilm.getId(), addedUser.getId());
 
         filmStorage.like(newFilm, addedUser);
 
-        List<Map<Integer, Integer>> filledLikes = filmStorage.getFilmLikes(newFilm.getId(), addedUser.getId());
+        List<Map<Integer, Integer>> filledLikes = getFilmLikes(newFilm.getId(), addedUser.getId());
 
 
         assertThat(emptyLikes.isEmpty()).isTrue();
         assertThat(filledLikes.isEmpty()).isFalse();
+    }
+
+    private List<Map<Integer, Integer>> getFilmLikes(Integer filmId, Integer userId) {
+        String sqlQuery = "SELECT film_id, user_id FROM film_like WHERE film_id = :film_id and user_id = :user_id";
+        SqlParameterSource params = new MapSqlParameterSource(Map.of("film_id", filmId, "user_id", userId));
+
+        return jdbcTemplate.query(sqlQuery, params, (rs, rowNum) ->
+                Map.of(rs.getInt("film_id"), rs.getInt("user_id")));
     }
 }

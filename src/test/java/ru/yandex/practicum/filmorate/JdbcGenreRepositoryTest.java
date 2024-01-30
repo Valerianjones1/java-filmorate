@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.repository.genre.JdbcGenreRepository;
+import ru.yandex.practicum.filmorate.repository.genre.GenreRepository;
 
 import java.util.List;
 
@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest // указываем, о необходимости подготовить бины для работы с БД
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class GenreDbStorageTest {
+class JdbcGenreRepositoryTest {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
     public void findAllGenres() {
-        GenreStorage genreStorage = new GenreDbStorage(jdbcTemplate);
+        GenreRepository genreRepository = new JdbcGenreRepository(jdbcTemplate);
 
-        List<Genre> allGenres = genreStorage.findAll();
+        List<Genre> allGenres = genreRepository.findAll();
         assertThat(allGenres)
                 .isNotEmpty()
                 .size()
@@ -31,9 +31,9 @@ class GenreDbStorageTest {
 
     @Test
     public void getGenre() {
-        GenreStorage genreStorage = new GenreDbStorage(jdbcTemplate);
+        GenreRepository genreRepository = new JdbcGenreRepository(jdbcTemplate);
 
-        Genre genre = genreStorage.get(1);
+        Genre genre = genreRepository.get(1);
         assertThat(genre)
                 .isNotNull();
         assertThat(genre.getName())

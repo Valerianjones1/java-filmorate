@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
+import ru.yandex.practicum.filmorate.repository.user.JdbcUserRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest // указываем, о необходимости подготовить бины для работы с БД
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class UserDbStorageTest {
+class JdbcUserRepositoryTest {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
     public void testFindUserById() {
         // Подготавливаем данные для теста
         User newUser = new User("user@email.ru", "vanya123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         userStorage.add(newUser);
 
         // вызываем тестируемый метод
@@ -39,7 +39,7 @@ class UserDbStorageTest {
     public void testUpdate() {
         // Подготавливаем данные для теста
         User newUser = new User("user@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         userStorage.add(newUser);
         User foundOldUser = userStorage.get(newUser.getId());
 
@@ -60,7 +60,7 @@ class UserDbStorageTest {
     public void testRemove() {
         // Подготавливаем данные для теста
         User newUser = new User("user@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         userStorage.add(newUser);
         User addedUser = userStorage.get(newUser.getId());
 
@@ -79,7 +79,7 @@ class UserDbStorageTest {
     @Test
     public void testFindAll() {
 
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         List<User> emptyUsers = userStorage.findAll();
         // Подготавливаем данные для теста
         User newUser = new User("user@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
@@ -101,7 +101,7 @@ class UserDbStorageTest {
     @Test
     public void testAddFriend() {
 
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         // Подготавливаем данные для теста
         User newUser1 = new User("user1@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
         userStorage.add(newUser1);
@@ -125,7 +125,7 @@ class UserDbStorageTest {
     @Test
     public void testRemoveFriend() {
 
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         // Подготавливаем данные для теста
         User newUser1 = new User("user1@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
         userStorage.add(newUser1);
@@ -157,7 +157,7 @@ class UserDbStorageTest {
     @Test
     public void testGetCommonFriends() {
 
-        UserDbStorage userStorage = new UserDbStorage(jdbcTemplate);
+        JdbcUserRepository userStorage = new JdbcUserRepository(jdbcTemplate);
         // Подготавливаем данные для теста
         User newUser1 = new User("user1@email.ru", "vanyza123", "Ivan Petrov", LocalDate.of(1990, 1, 1));
         userStorage.add(newUser1);

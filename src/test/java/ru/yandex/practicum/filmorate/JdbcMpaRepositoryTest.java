@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
+import ru.yandex.practicum.filmorate.repository.mpa.JdbcMpaRepository;
+import ru.yandex.practicum.filmorate.repository.mpa.MpaRepository;
 
 import java.util.List;
 
@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest // указываем, о необходимости подготовить бины для работы с БД
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class MpaDbStorageTest {
+class JdbcMpaRepositoryTest {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
     public void findAllMpas() {
-        MpaStorage mpaStorage = new MpaDbStorage(jdbcTemplate);
+        MpaRepository mpaRepository = new JdbcMpaRepository(jdbcTemplate);
 
-        List<Mpa> allMpas = mpaStorage.findAll();
+        List<Mpa> allMpas = mpaRepository.findAll();
         assertThat(allMpas)
                 .isNotEmpty()
                 .size()
@@ -31,9 +31,9 @@ class MpaDbStorageTest {
 
     @Test
     public void getMpa() {
-        MpaStorage mpaStorage = new MpaDbStorage(jdbcTemplate);
+        MpaRepository mpaRepository = new JdbcMpaRepository(jdbcTemplate);
 
-        Mpa mpa = mpaStorage.get(1);
+        Mpa mpa = mpaRepository.get(1);
         assertThat(mpa)
                 .isNotNull();
         assertThat(mpa.getName())

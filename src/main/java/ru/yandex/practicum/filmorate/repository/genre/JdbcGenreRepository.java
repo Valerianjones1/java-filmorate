@@ -1,7 +1,6 @@
-package ru.yandex.practicum.filmorate.storage.genre;
+package ru.yandex.practicum.filmorate.repository.genre;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -13,11 +12,11 @@ import java.sql.SQLException;
 import java.util.List;
 
 @Component
-public class GenreDbStorage implements GenreStorage {
+public class JdbcGenreRepository implements GenreRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Autowired
-    public GenreDbStorage(NamedParameterJdbcTemplate jdbcTemplate) {
+    public JdbcGenreRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -31,11 +30,9 @@ public class GenreDbStorage implements GenreStorage {
     public Genre get(Integer genreId) {
         String sqlQuery = "SELECT * FROM genre WHERE id = :id";
         SqlParameterSource params = new MapSqlParameterSource("id", genreId);
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, params, this::makeGenre);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+
+        List<Genre> genres = jdbcTemplate.query(sqlQuery, params, this::makeGenre);
+        return genres.isEmpty() ? null : genres.get(0);
     }
 
     private Genre makeGenre(ResultSet resultSet, int rowNum) throws SQLException {

@@ -1,7 +1,6 @@
-package ru.yandex.practicum.filmorate.storage.user;
+package ru.yandex.practicum.filmorate.repository.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -19,11 +18,11 @@ import java.util.Map;
 import java.util.Objects;
 
 @Component("UserDbStorage")
-public class UserDbStorage implements UserStorage {
+public class JdbcUserRepository implements UserRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Autowired
-    public UserDbStorage(NamedParameterJdbcTemplate jdbcTemplate) {
+    public JdbcUserRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -57,12 +56,8 @@ public class UserDbStorage implements UserStorage {
                 "name", user.getName(),
                 "birthday", user.getBirthday(),
                 "id", user.getId()));
-        try {
-            jdbcTemplate.update(sqlQuery, userParams);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
 
+        jdbcTemplate.update(sqlQuery, userParams);
         return user;
     }
 
@@ -86,18 +81,18 @@ public class UserDbStorage implements UserStorage {
 
         String sqlQuery = "SELECT * FROM users WHERE id = :id";
         SqlParameterSource params = new MapSqlParameterSource("id", userId);
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, params, this::makeUser);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
 
+        List<User> users = jdbcTemplate.query(sqlQuery, params, this::makeUser);
+        return users.isEmpty() ? null : users.get(0);
     }
 
     @Override
     public User addFriend(User user, User friend) {
-        String sqlQuery = "INSERT INTO user_relation (user_id, other_user_id) " +
-                "VALUES (:user_id, :other_user_id)";
+        String sqlQuery = "MERGE INTO user_relation as ur " +
+                "USING (VALUES(:user_id, :other_user_id)) as v(user_id,other_user_id) " +
+                "ON ur.user_id=v.user_id and ur.other_user_id=v.other_user_id " +
+                "WHEN MATCHED THEN UPDATE SET ur.user_id=v.user_id and ur.other_user_id=v.other_user_id " +
+                "WHEN NOT MATCHED THEN INSERT (user_id,other_user_id) VALUES(:user_id, :other_user_id)";
 
         SqlParameterSource params = new MapSqlParameterSource(Map.of(
                 "user_id", user.getId(),
@@ -143,28 +138,11 @@ public class UserDbStorage implements UserStorage {
     }
 
     private User makeUser(ResultSet resultSet, int rowNum) throws SQLException {
-        User initialUser = new User(resultSet.getInt("id"),
+        return new User(resultSet.getInt("id"),
                 resultSet.getString("email"),
                 resultSet.getString("login"),
                 resultSet.getString("name"),
                 resultSet.getDate("birthday").toLocalDate());
-
-        SqlParameterSource params = new MapSqlParameterSource(Map.of(
-                "user_id", initialUser.getId()));
-        List<Map<String, Object>> friends = jdbcTemplate.queryForList(
-                "SELECT * FROM user_relation WHERE user_id = :user_id", params);
-
-        if (!friends.isEmpty()) {
-            Map<Integer, String> friendsHash = new HashMap<>();
-            for (Map<String, Object> row : friends) {
-                Integer otherUserId = (Integer) row.get("other_user_id");
-                String status = (String) row.get("status");
-                friendsHash.put(otherUserId, status);
-            }
-            initialUser.setFriends(friendsHash);
-        }
-
-        return initialUser;
     }
 
     public Map<String, Object> userToMap(String email, String login,

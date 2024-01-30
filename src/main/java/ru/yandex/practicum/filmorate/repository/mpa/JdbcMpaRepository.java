@@ -1,7 +1,6 @@
-package ru.yandex.practicum.filmorate.storage.mpa;
+package ru.yandex.practicum.filmorate.repository.mpa;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -13,12 +12,12 @@ import java.sql.SQLException;
 import java.util.List;
 
 @Component
-public class MpaDbStorage implements MpaStorage {
+public class JdbcMpaRepository implements MpaRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
     @Autowired
-    public MpaDbStorage(NamedParameterJdbcTemplate jdbcTemplate) {
+    public JdbcMpaRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -32,11 +31,10 @@ public class MpaDbStorage implements MpaStorage {
     public Mpa get(Integer mpaId) {
         String sqlQuery = "SELECT * FROM mpa WHERE id = :id";
         SqlParameterSource params = new MapSqlParameterSource("id", mpaId);
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, params, this::makeMpa);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+
+        List<Mpa> mpas = jdbcTemplate.query(sqlQuery, params, this::makeMpa);
+        return mpas.isEmpty() ? null : mpas.get(0);
+
     }
 
     private Mpa makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
