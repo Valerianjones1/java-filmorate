@@ -35,8 +35,7 @@ public class UserController {
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
-        User updatedUser = service.update(user);
-        return updatedUser;
+        return service.update(user);
     }
 
     @DeleteMapping("/{userId}")

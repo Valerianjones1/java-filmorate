@@ -6,17 +6,18 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.repository.user.UserRepository;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @Service
 @Slf4j
 public class UserService {
-    private final UserStorage storage;
+    private final UserRepository storage;
 
     @Autowired
-    public UserService(UserStorage storage) {
+    public UserService(UserRepository storage) {
         this.storage = storage;
     }
 
@@ -27,7 +28,7 @@ public class UserService {
         return storage.add(user);
     }
 
-    public User update(User user) {
+    public User update(@Valid User user) {
         if (user.getId() == null) {
             log.warn("Идентификатор пользователя равен null");
             throw new ValidationException("Идентификатор пользователя равен null");
@@ -52,11 +53,11 @@ public class UserService {
     }
 
     public User get(Integer userId) {
-        User foundUser = storage.get(userId);
-        if (foundUser == null) {
+        User user = storage.get(userId);
+        if (user == null) {
             throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
-        return foundUser;
+        return user;
     }
 
     public User addFriend(Integer userId, Integer friendId) {

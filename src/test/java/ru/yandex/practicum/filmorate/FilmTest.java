@@ -9,8 +9,8 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,7 +59,7 @@ public class FilmTest {
         film.setDescription("f".repeat(201));
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
 
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
+        String message = new ArrayList<>(violations).get(0).getMessage();
 
         assertFalse(violations.isEmpty());
         assertEquals("Длина описания превышает лимит в 200 символов", message);
@@ -77,7 +77,7 @@ public class FilmTest {
     public void shouldNotCreateFilmDuration() {
         film.setDuration(0);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        String message = violations.stream().collect(Collectors.toList()).get(0).getMessage();
+        String message = new ArrayList<>(violations).get(0).getMessage();
 
         assertFalse(violations.isEmpty());
         assertEquals("Продолжительность не может быть меньше или равна нулю", message);
